@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Local -->
+    <title>Sello de Canaán | Menú Online — Panadería y Comida Rápida en Yuma, Carabobo</title>
+    <meta name="description"
+        content="Menú online de Sello de Canaán. Pizzas, panes artesanales, dulces y comida rápida en Yuma (Guigüe), Carabobo. Pide por WhatsApp con delivery o recoge en tienda.">
+    <meta name="keywords"
+        content="menú Sello de Canaán, pedir comida Yuma, delivery Yuma, pizzas Carabobo, panadería Yuma, comida rápida Guigüe">
+    <meta name="geo.region" content="VE-G">
+    <meta name="geo.placename" content="Yuma, Carabobo, Venezuela">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sello de Canaán — Menú Online en Yuma, Carabobo">
+    <meta property="og:description" content="50+ productos artesanales. Pide desde tu teléfono con delivery express en Yuma.">
+    <meta property="og:image" content="assets/logo_canaan.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo_canaan.png">
+    <link rel="apple-touch-icon" href="assets/logo_canaan.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,700&family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/canaan.css">
+    <script defer src="js/app.js"></script>
+    <script defer src="js/alpine.min.js"></script>
+</head>
+
+<body x-data="tienda()" x-init="inicializar()">
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast de Notificación -->
+    <div class="toast" id="toast_carrito">
+        <i class="ri-check-line" style="color: var(--verde_whatsapp); font-size: 18px;"></i>
+        <span id="toast_mensaje">Producto añadido</span>
+    </div>
+
+    <!-- ===== WIDGET DÓLAR BCV ===== -->
+    <div class="widget_dolar" x-show="dolar_bcv" x-transition>
+        <span class="widget_dolar__etiqueta">Dólar BCV</span>
+        <span class="widget_dolar__valor" x-text="`Bs. ${dolar_bcv}`"></span>
+    </div>
+
+    <!-- ===== BOTÓN CARRITO FLOTANTE ===== -->
+    <button id="boton_abrir_carrito" class="boton_carrito_flotante" @click="carrito_abierto = true">
+        <i class="ri-shopping-cart-2-fill" style="font-size: 24px;"></i>
+        <span x-ref="contador_carrito" class="boton_carrito_flotante__contador" x-text="total_items"
+            x-show="total_items > 0"></span>
+    </button>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header__inner">
+            <a href="index.html" class="header__logo_link">
+                <div class="header__logo_icono">
+                    <img src="assets/logo_canaan.png" alt="Logo Sello de Canaán">
+                </div>
+                <div style="text-align:left;">
+                    <p class="header__titulo titulo_sello">SELLO DE</p>
+                    <p class="header__titulo titulo_canaan">CANAÁN</p>
+                </div>
+            </a>
+            <nav class="header__nav">
+                <a href="index.html" class="nav_cta">
+                    <i class="ri-home-fill" style="font-size: 18px;"></i>
+                    Inicio
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== AVISO HORARIO ===== -->
+    <div class="aviso_horario" x-show="!tienda_abierta" x-cloak>
+        <i class="ri-moon-fill" style="font-size: 14px;"></i>
+        <span>Estamos descansando para traerte el Maná fresco mañana 🌾 Horario: 7:00 AM - 8:00 PM</span>
+    </div>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="inicio">
+        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1200"
+            alt="Festín variado de comida tentadora" class="hero__imagen">
+        <div class="hero__overlay"></div>
+        <div class="hero__contenido">
+            <h2 class="hero__titulo">Variedad en cada bocado, directo a tu mesa.</h2>
+            <p class="hero__subtitulo">Descubre un festín de sabores en Leche y Miel: ¡desde nuestra panadería artesanal
+                hasta pizzas, hamburguesas y dulces irresistibles!</p>
+            <a href="#menu" class="boton_cta" id="boton_ver_menu">
+                <i class="ri-book-open-fill" style="font-size: 18px;"></i>
+                Ver Menú
+            </a>
+        </div>
+    </section>
+
+    <!-- ===== CATÁLOGO ===== -->
+    <main id="menu" class="catalogo">
+        <h2 class="catalogo__titulo_seccion fuente_serif">Nuestro Menú</h2>
+        <p class="catalogo__descripcion_seccion">Elige tus favoritos y haz tu pedido por WhatsApp</p>
+
+        <!-- Filtros -->
+        <div class="catalogo__filtros no_scrollbar">
+            <template x-for="cat in categorias" :key="cat">
+                <button @click="filtro_activo = cat"
+                    :class="filtro_activo === cat ? 'catalogo__filtro_boton catalogo__filtro_boton--activo' : 'catalogo__filtro_boton'"
+                    x-text="cat"></button>
+            </template>
+        </div>
+
+        <!-- Loading Skeletons -->
+        <div class="catalogo__grid" x-show="cargando" style="margin-bottom: 40px;">
+            <template x-for="i in 6" :key="i">
+                <div class="skeleton skeleton_card"></div>
+            </template>
+        </div>
+
+        <!-- Grid de Productos -->
+        <div class="catalogo__grid" x-show="!cargando && productos_filtrados().length > 0">
+            <template x-for="producto in productos_filtrados()" :key="producto.id">
+                <div :class="producto.disponible ? 'producto_card' : 'producto_card producto_card--agotado'">
+                    <div class="producto_card__imagen_contenedor">
+                        <img :src="producto.imagen" :alt="producto.nombre" class="producto_card__imagen"
+                            onerror="this.src='https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400'">
+                        <span class="producto_card__precio_badge" x-text="`$${producto.precio}`"></span>
+                        <span class="producto_card__categoria_badge" x-text="producto.categoria"></span>
+                        <template x-if="producto.badge">
+                            <span class="badge_venta" x-text="producto.badge"></span>
+                        </template>
+                    </div>
+                    <div class="producto_card__cuerpo">
+                        <h3 class="producto_card__nombre" x-text="producto.nombre"></h3>
+                        <p class="producto_card__descripcion" x-text="producto.descripcion"></p>
+
+                        <template x-if="producto.disponible && producto.stock > 0 && producto.stock <= 3">
+                            <p class="stock_alerta" x-text="`⚠️ ¡Quedan solo ${producto.stock}!`"></p>
+                        </template>
+
+                        <button @click="agregar_al_carrito(producto)" :disabled="!producto.disponible" :class="producto.disponible
+                                ? 'producto_card__boton_agregar'
+                                : 'producto_card__boton_agregar producto_card__boton_agregar--agotado'"
+                            style="margin-top: 12px;"
+                            x-html="producto.disponible ? `<i class='ri-shopping-bag-3-fill' style='font-size: 16px; margin-right: 4px;'></i> Agregar al carrito` : `⛔ Agotado por hoy`">
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </main>
+
+    <!-- ===== PANEL CARRITO ===== -->
+    <div class="carrito_overlay" x-show="carrito_abierto" x-cloak x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <div @click.outside="carrito_abierto = false" class="carrito_panel"
+            x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="translate-x-full"
+            x-transition:enter-end="translate-x-0" style="transform: translateX(0);">
+
+            <!-- Header -->
+            <div class="carrito_panel__header">
+                <div>
+                    <h2 class="carrito_panel__titulo fuente_serif">Mi Canasta</h2>
+                    <p class="carrito_panel__subtitulo">Revisa tu pedido antes de enviar</p>
+                </div>
+                <button id="boton_cerrar_carrito" class="carrito_panel__cerrar" @click="carrito_abierto = false">
+                    <i class="ri-close-circle-fill" style="font-size: 24px; color: var(--terracota_profundo);"></i>
+                </button>
+            </div>
+
+
+
+            <!-- Cuerpo scrolleable: items + formulario de checkout -->
+            <div class="carrito_panel__items carrito_scroll">
+                <template x-if="carrito.length === 0">
+                    <div class="carrito_panel__vacio">
+                        <i class="ri-shopping-basket-fill"
+                            style="font-size: 56px; margin: 0 auto 12px; display: block; color: var(--terracota_profundo);"></i>
+                        <p style="font-weight:700;">Tu canasta está vacía</p>
+                    </div>
+                </template>
+
+                <template x-for="(item, index) in carrito" :key="index">
+                    <div class="carrito_item">
+                        <img :src="item.imagen" :alt="item.nombre" class="carrito_item__img"
+                            onerror="this.src='https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=100'">
+                        <div class="carrito_item__info">
+                            <div class="carrito_item__header">
+                                <div>
+                                    <div class="carrito_item__nombre" x-text="item.nombre"></div>
+                                    <div class="carrito_item__precio_unitario" x-text="`$${item.precio} c/u`"></div>
+                                </div>
+                                <span class="carrito_item__subtotal"
+                                    x-text="`$${(item.precio * item.cantidad).toFixed(2)}`"></span>
+                            </div>
+
+                            <div class="carrito_item__controles">
+                                <div class="carrito_item__cantidad_grupo">
+                                    <button @click="actualizar_cantidad(index, -1)"
+                                        class="carrito_item__cantidad_boton carrito_item__cantidad_boton--menos">−</button>
+                                    <span class="carrito_item__cantidad_valor" x-text="item.cantidad"></span>
+                                    <button @click="actualizar_cantidad(index, 1)"
+                                        class="carrito_item__cantidad_boton carrito_item__cantidad_boton--mas">+</button>
+                                </div>
+                                <button @click="quitar_item(index)" class="carrito_item__quitar">Quitar</button>
+                            </div>
+
+                            <div class="addons_contenedor"
+                                x-show="item.addons_posibles && item.addons_posibles.length > 0">
+                                <template x-for="addon in item.addons_posibles" :key="addon.nombre">
+                                    <button @click="toggle_addon(index, addon)"
+                                        :class="addon_esta_activo(index, addon) ? 'addon_boton addon_boton--activo' : 'addon_boton'"
+                                        x-text="`+ ${addon.nombre} ($${addon.precio.toFixed(2)})`">
+                                    </button>
+                                </template>
+                            </div>
+
+                            <textarea x-model="item.nota" @input="guardar_carrito()"
+                                placeholder="Nota: sin cebolla, extra salsa..." class="carrito_item__nota_input"
+                                rows="1"></textarea>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Sección de checkout (dentro del scroll) -->
+                <div class="carrito_panel__checkout_seccion" x-show="carrito.length > 0">
+                    <!-- Toggle Delivery/Retiro -->
+                    <div class="carrito_toggle" x-show="cobrar_delivery">
+                        <button @click="es_delivery = true"
+                            :class="es_delivery ? 'carrito_toggle__opcion carrito_toggle__opcion--activo' : 'carrito_toggle__opcion'">
+                            🛵 Delivery
+                        </button>
+                        <button @click="es_delivery = false"
+                            :class="!es_delivery ? 'carrito_toggle__opcion carrito_toggle__opcion--activo' : 'carrito_toggle__opcion'">
+                            🏪 Retiro en tienda
+                        </button>
+                    </div>
+
+                    <!-- Formulario -->
+                    <div class="carrito_formulario">
+                        <!-- 🍯 HONEYPOT anti-spam: oculto, solo los bots lo rellenan -->
+                        <input type="text" id="hp_email_campo" name="email_confirm"
+                            aria-hidden="true" tabindex="-1" autocomplete="off"
+                            style="display:none; position:absolute; left:-9999px;"
+                            placeholder="No rellenar">
+                        <input type="text" x-model="nombre_cliente" placeholder="¿A nombre de quién?"
+                            @input="guardar_datos_cliente()" class="carrito_input" id="input_nombre_cliente">
+                        <template x-if="es_delivery">
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                <!-- Selector de zona: solo visible si hay zonas configuradas en Google Sheets -->
+                                <template x-if="zonas_disponibles.length > 0">
+                                    <select x-model="zona_delivery" class="carrito_input"
+                                        @change="guardar_datos_cliente()">
+                                        <option value="" disabled>Selecciona tu zona de entrega</option>
+                                        <template x-for="zona in zonas_disponibles" :key="zona.nombre">
+                                            <option :value="zona.nombre"
+                                                x-text="cobrar_delivery ? `${zona.nombre} (+$${zona.precio.toFixed(2)})` : zona.nombre">
+                                            </option>
+                                        </template>
+                                    </select>
+                                </template>
+                                <input type="text" x-model="direccion" placeholder="Dirección exacta de entrega"
+                                    class="carrito_input" id="input_direccion" @input="guardar_datos_cliente()">
+                                <input type="text" x-model="referencia"
+                                    placeholder="Punto de referencia (Ej: Al lado de...)" class="carrito_input"
+                                    id="input_referencia" @input="guardar_datos_cliente()">
+                            </div>
+                        </template>
+                    </div>
+
+
+                    <!-- Info Pago Móvil -->
+                    <div class="carrito_pago_info">
+                        <p class="carrito_pago_info__titulo">📱 Datos Pago Móvil:</p>
+                        <p class="carrito_pago_info__datos">Venezuela (0102) | 0412-0708031 | V-32.189.355</p>
+                    </div>
+
+                    <!-- Tiempo estimado -->
+                    <p class="carrito_tiempo_estimado" x-show="es_delivery">
+                        🕐 Tiempo estimado de entrega: 30-45 min
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer fijo: solo totales + botón WhatsApp -->
+            <div class="carrito_panel__footer">
+                <!-- Totales -->
+                <div class="carrito_totales">
+                    <span class="carrito_totales__label">Total:</span>
+                    <div style="text-align:right;">
+                        <p class="carrito_totales__usd" x-text="`$${total_usd()}`"></p>
+                        <p class="carrito_totales__bs" x-text="`Bs. ${total_bs()}`"></p>
+                    </div>
+                </div>
+
+                <!-- Botón WhatsApp -->
+                <button id="boton_enviar_pedido" class="boton_whatsapp" @click="enviar_pedido()">
+                    <i class="ri-whatsapp-fill" style="font-size: 20px;"></i>
+                    Enviar Pedido por WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <p class="footer__logo">SELLO DE CANAÁN</p>
+        <p class="footer__eslogan">Leche y Miel</p>
+        <div class="footer__info">
+            <div class="footer__info_item">
+                <i class="ri-map-pin-fill" style="font-size: 16px;"></i>
+                <span>Guigüe, Edo. Carabobo</span>
+            </div>
+            <div class="footer__info_item">
+                <i class="ri-time-fill" style="font-size: 16px;"></i>
+                <span>Lun-Sáb: 7:00 AM - 8:00 PM</span>
+            </div>
+            <div class="footer__info_item">
+                <i class="ri-phone-fill" style="font-size: 16px;"></i>
+                <span>0412-0708031</span>
+            </div>
+        </div>
+        <!-- Redes Sociales -->
+        <div class="footer__redes">
+            <a href="#" class="footer__red_link" title="WhatsApp" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+            </a>
+            <a href="#" class="footer__red_link" title="Instagram" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                </svg>
+            </a>
+            <a href="#" class="footer__red_link" title="TikTok" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                </svg>
+            </a>
+        </div>
+
+        <div class="footer__separador"></div>
+        <p class="footer__copy">© 2026 Sello de Canaán. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- ===== JAVASCRIPT ===== -->
+    
+    <!-- Script del Preloader -->
+    
+</body>
+
+</html>
